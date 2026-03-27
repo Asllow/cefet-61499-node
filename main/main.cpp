@@ -4,14 +4,14 @@
 #include "cefet_node_engine.h"
 #include "network_manager.h"
 #include "analog_input_block.h"
-#include "udp_publisher_block.h" // Atualizado
+#include "udp_publisher_block.h"
 #include "e_cycle_block.h"
 
 static const char* TAG = "MAIN_APP";
 
 struct ControlLoopContext {
     Cefet::AnalogInputBlock* adc_sensor;
-    Cefet::UdpPublisherBlock* udp_publisher; // Atualizado
+    Cefet::UdpPublisherBlock* udp_publisher;
 };
 
 static void onReadAndPublish(void* handler_args, esp_event_base_t base, int32_t id, void* event_data)

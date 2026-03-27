@@ -3,54 +3,63 @@
 #include <string>
 #include "i_function_block.h"
 #include "mqtt_client.h"
+#include "cJSON.h"
 
 namespace Cefet {
 
 /**
- * @brief Bloco Funcional de Publicacao MQTT (CSIFB).
+ * @brief MQTT Publisher Service Interface Function Block (CSIFB).
  *
- * Encapsula o cliente MQTT da Espressif. Responsavel por enviar dados
- * (telemetria, logs ou estados) do no para o Broker da rede OT.
+ * Encapsulates the ESP-IDF MQTT client to act as a publisher node.
+ * Routes internal control loop events to an external IT/OT broker.
  */
 class MqttPublisherBlock : public IFunctionBlock {
 public:
     /**
-     * @brief Construtor do publicador MQTT.
+     * @brief Instantiates the MQTT Publisher block.
      *
-     * @param block_id Identificador unico do bloco.
-     * @param broker_uri Endereco do Broker MQTT (ex: "mqtt://192.168.1.100" ou "mqtt://test.mosquitto.org").
-     * @param target_topic Topico MQTT onde os dados serao publicados.
+     * @param block_id Unique identifier for the block instance.
+     * @param broker_uri Full URI of the MQTT broker (e.g., "mqtt://192.168.1.100").
+     * @param target_topic The MQTT topic where the payload will be published.
      */
     MqttPublisherBlock(const std::string& block_id, const std::string& broker_uri, const std::string& target_topic);
 
     /**
-     * @brief Destrutor padrao. Desconecta do Broker se necessario.
+     * @brief Destroys the MQTT block and releases network resources.
      */
     ~MqttPublisherBlock() override;
 
     /**
-     * @brief Inicializa o cliente MQTT e inicia a conexao com o Broker.
+     * @brief Initializes the MQTT client state machine and connects to the broker.
      *
-     * @return true Se o cliente foi instanciado.
-     * @return false Se a URI for invalida ou faltar memoria.
+     * @return true if hardware allocation and state machine start successfully.
      */
     bool initialize() override;
 
     /**
-     * @brief Recupera a identificacao do bloco.
+     * @brief Retrieves the block's unique identifier.
      *
-     * @return std::string ID do bloco.
+     * @return std::string The configured block ID.
      */
     std::string getId() const override;
 
     /**
-     * @brief Publica uma mensagem de texto (payload) no topico configurado.
+     * @brief Enqueues a payload for publication on the configured topic.
      *
-     * @param payload A string contendo os dados (ex: um JSON ou numero).
-     * @return true Se a mensagem foi enfileirada para envio.
-     * @return false Se o cliente nao estiver conectado.
+     * @param payload String containing the data (e.g., JSON string or numeric value).
+     * @return true if the message was successfully enqueued.
+     * @return false if the client is disconnected or out of memory.
      */
     bool publish(const std::string& payload);
+
+    /**
+     * @brief Factory method for dynamic instantiation via JSON manifest.
+     *
+     * @param block_id Unique identifier for the new instance.
+     * @param config cJSON pointer containing block-specific parameters.
+     * @return IFunctionBlock* Pointer to the newly allocated instance.
+     */
+    static IFunctionBlock* create(const std::string& block_id, cJSON* config);
 
 private:
     std::string m_id;
@@ -60,7 +69,12 @@ private:
     bool m_is_connected;
 
     /**
-     * @brief Callback estatica para lidar com eventos internos do protocolo MQTT.
+     * @brief Internal static callback to handle ESP-IDF MQTT events.
+     *
+     * @param handler_args Opaque pointer to the class instance (this).
+     * @param base Event family base.
+     * @param event_id Specific event identifier.
+     * @param event_data Pointer to the raw MQTT event data.
      */
     static void mqttEventHandler(void* handler_args, esp_event_base_t base, int32_t event_id, void* event_data);
 };

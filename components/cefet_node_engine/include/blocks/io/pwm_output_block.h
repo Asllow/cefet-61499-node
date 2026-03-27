@@ -3,57 +3,65 @@
 #include <string>
 #include "i_function_block.h"
 #include "driver/ledc.h"
+#include "cJSON.h"
 
 namespace Cefet {
 
 /**
- * @brief Bloco Funcional de Saida PWM (SIFB).
+ * @brief PWM Output Service Interface Function Block (SIFB).
  *
- * Encapsula o driver LEDC do ESP-IDF v6.0 para geracao de sinais PWM
- * em hardware. Utilizado para acionamento de atuadores de potencia,
- * como motores DC via Ponte H, inversores de frequencia ou aquecedores.
+ * Encapsulates the ESP-IDF LEDC driver for hardware-based PWM signal generation.
+ * Utilized for driving power actuators, such as heaters, DC motors (via H-Bridge),
+ * or frequency inverters.
  */
 class PwmOutputBlock : public IFunctionBlock {
 public:
     /**
-     * @brief Construtor do bloco de saida PWM.
+     * @brief Instantiates the PWM Output Block.
      *
-     * @param block_id Identificador unico do bloco na rede.
-     * @param gpio_num Pino fisico do ESP32 onde o sinal PWM sera gerado.
-     * @param timer_num Temporizador de hardware alocado para este sinal (ex: LEDC_TIMER_0).
-     * @param channel_num Canal de controle PWM alocado (ex: LEDC_CHANNEL_0).
-     * @param freq_hz Frequencia base do sinal PWM em Hertz.
+     * @param block_id Unique network identifier for the block instance.
+     * @param gpio_num Physical ESP32 GPIO pin for the PWM signal.
+     * @param timer_num Hardware timer allocated for this signal (e.g., LEDC_TIMER_0).
+     * @param channel_num Allocated PWM control channel (e.g., LEDC_CHANNEL_0).
+     * @param freq_hz Base frequency of the PWM signal in Hertz.
      */
     PwmOutputBlock(const std::string& block_id, int gpio_num, ledc_timer_t timer_num, ledc_channel_t channel_num, uint32_t freq_hz);
 
     /**
-     * @brief Destrutor padrao.
+     * @brief Destroys the block and stops the PWM signal generation.
      */
     ~PwmOutputBlock() override;
 
     /**
-     * @brief Inicializa o periférico LEDC e configura temporizador e canal.
+     * @brief Initializes the LEDC peripheral, configuring timer and channel.
      *
-     * @return true Se o driver foi configurado com sucesso.
-     * @return false Se ocorreu falha na alocacao do hardware.
+     * @return true if the hardware driver was successfully configured.
      */
     bool initialize() override;
 
     /**
-     * @brief Recupera a identificacao do bloco.
+     * @brief Retrieves the block's unique identifier.
      *
-     * @return std::string contendo o ID configurado no construtor.
+     * @return std::string The configured block ID.
      */
     std::string getId() const override;
 
     /**
-     * @brief Atualiza o ciclo de trabalho (Duty Cycle) do sinal PWM.
+     * @brief Updates the duty cycle of the PWM signal.
      *
-     * @param duty_cycle Valor do duty cycle (0 a 8191 para resolucao de 13 bits).
-     * @return true Se a atualizacao foi aplicada ao hardware com sucesso.
-     * @return false Se ocorreu erro na comunicacao com os registradores.
+     * @param duty_cycle Duty cycle value (0 to 8191 for 13-bit resolution).
+     * @return true if the hardware registers were updated successfully.
      */
     bool writePwm(uint32_t duty_cycle);
+
+    /**
+     * @brief Factory method for dynamic instantiation via JSON manifest.
+     *
+     * @param block_id Unique identifier for the new instance.
+     * @param config cJSON pointer containing block-specific parameters.
+     * @return IFunctionBlock* Pointer to the newly allocated instance.
+     */
+    static IFunctionBlock* create(const std::string& block_id, cJSON* config);
 
 private:
     std::string m_id;

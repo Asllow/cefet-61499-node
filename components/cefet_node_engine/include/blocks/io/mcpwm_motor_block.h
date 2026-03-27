@@ -3,59 +3,66 @@
 #include <string>
 #include "i_function_block.h"
 #include "driver/mcpwm_prelude.h"
+#include "cJSON.h"
 
 namespace Cefet {
 
 /**
- * @brief Bloco Funcional de Controle de Motor DC (SIFB).
+ * @brief DC Motor Control Service Interface Function Block (SIFB).
  *
- * Encapsula a API moderna do MCPWM para acionamento de Pontes H.
- * Gerencia automaticamente os sinais complementares de direcao e
- * a largura de pulso, isolando a logica de controle da complexidade
- * de alocacao de hardware do ESP-IDF v6.0.
+ * Encapsulates the modern MCPWM API for H-Bridge driving.
+ * Automatically manages complementary direction signals and pulse width,
+ * isolating control logic from ESP-IDF v6.0 hardware allocation complexity.
  */
 class McpwmMotorBlock : public IFunctionBlock {
 public:
     /**
-     * @brief Construtor do bloco de motor MCPWM.
+     * @brief Instantiates the MCPWM Motor Block.
      *
-     * @param block_id Identificador unico do bloco na rede.
-     * @param gpio_pwm_a Pino GPIO conectado a entrada IN1/PWM_R da Ponte H.
-     * @param gpio_pwm_b Pino GPIO conectado a entrada IN2/PWM_L da Ponte H.
-     * @param freq_hz Frequencia de comutacao em Hertz (ex: 20000 para 20kHz).
+     * @param block_id Unique network identifier for the block instance.
+     * @param gpio_pwm_a GPIO pin connected to IN1/PWM_R input of the H-Bridge.
+     * @param gpio_pwm_b GPIO pin connected to IN2/PWM_L input of the H-Bridge.
+     * @param freq_hz Switching frequency in Hertz (e.g., 20000 for 20kHz).
      */
     McpwmMotorBlock(const std::string& block_id, int gpio_pwm_a, int gpio_pwm_b, uint32_t freq_hz);
 
     /**
-     * @brief Destrutor padrao.
+     * @brief Destroys the block and safely releases MCPWM hardware generators.
      */
     ~McpwmMotorBlock() override;
 
     /**
-     * @brief Inicializa o pipeline do MCPWM (Timer, Operador, Comparador e Geradores).
+     * @brief Initializes the MCPWM pipeline (Timer, Operator, Comparator, Generators).
      *
-     * @return true Se todos os modulos de hardware foram alocados com sucesso.
-     * @return false Se ocorreu falha de memoria ou GPIO invalido.
+     * @return true if all hardware modules are successfully allocated.
      */
     bool initialize() override;
 
     /**
-     * @brief Recupera a identificacao do bloco.
+     * @brief Retrieves the block's unique identifier.
      *
-     * @return std::string contendo o ID configurado no construtor.
+     * @return std::string The configured block ID.
      */
     std::string getId() const override;
 
     /**
-     * @brief Atualiza a velocidade e direcao do motor DC.
+     * @brief Updates DC motor speed and direction.
      *
-     * @param speed_percent Valor percentual da velocidade (-100.0 a 100.0).
-     * Valores positivos giram em um sentido, negativos no oposto.
-     * O valor 0.0 desativa ambas as saidas (freio/roda livre).
-     * @return true Se o comando foi aceito pelo hardware.
-     * @return false Se os ponteiros de hardware forem nulos.
+     * @param speed_percent Percentage value (-100.0 to 100.0).
+     * Positive values drive in one direction, negative in the opposite.
+     * A value of 0.0 forces both outputs to freewheel/brake state.
+     * @return true if the hardware accepted the command.
      */
     bool setSpeed(float speed_percent);
+
+    /**
+     * @brief Factory method for dynamic instantiation via JSON manifest.
+     *
+     * @param block_id Unique identifier for the new instance.
+     * @param config cJSON pointer containing block-specific parameters.
+     * @return IFunctionBlock* Pointer to the newly allocated instance.
+     */
+    static IFunctionBlock* create(const std::string& block_id, cJSON* config);
 
 private:
     std::string m_id;

@@ -15,5 +15,5 @@ idf_component_register(
                 "include/blocks/io"
                 "include/blocks/network"
                 "include/blocks/timers"
-    REQUIRES esp_event esp_adc esp_timer driver esp_wifi esp_netif nvs_flash esp_driver_ledc esp_driver_mcpwm mqtt lwip
+    REQUIRES esp_event esp_adc esp_timer driver esp_wifi esp_netif nvs_flash esp_driver_ledc esp_driver_mcpwm mqtt lwip cjson
 )

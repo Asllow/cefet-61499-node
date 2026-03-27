@@ -1,4 +1,5 @@
 #include "pwm_output_block.h"
+#include "block_registry.h"
 #include "esp_log.h"
 
 namespace Cefet {
@@ -25,7 +26,7 @@ bool PwmOutputBlock::initialize()
     ledc_timer.clk_cfg          = LEDC_AUTO_CLK;
 
     if (ledc_timer_config(&ledc_timer) != ESP_OK) {
-        ESP_LOGE(TAG, "[%s] Falha ao configurar temporizador PWM.", m_id.c_str());
+        ESP_LOGE(TAG, "[%s] Failed to configure PWM timer.", m_id.c_str());
         return false;
     }
 
@@ -38,11 +39,11 @@ bool PwmOutputBlock::initialize()
     ledc_channel.hpoint         = 0;
 
     if (ledc_channel_config(&ledc_channel) != ESP_OK) {
-        ESP_LOGE(TAG, "[%s] Falha ao configurar canal PWM.", m_id.c_str());
+        ESP_LOGE(TAG, "[%s] Failed to configure PWM channel.", m_id.c_str());
         return false;
     }
 
-    ESP_LOGI(TAG, "[%s] Bloco PWM inicializado. Pino: %d, Freq: %lu Hz", m_id.c_str(), m_gpio_num, m_freq_hz);
+    ESP_LOGI(TAG, "[%s] PWM Block initialized. Pin: %d, Freq: %lu Hz", m_id.c_str(), m_gpio_num, m_freq_hz);
     return true;
 }
 
@@ -63,5 +64,46 @@ bool PwmOutputBlock::writePwm(uint32_t duty_cycle)
 
     return true;
 }
+
+IFunctionBlock* PwmOutputBlock::create(const std::string& block_id, cJSON* config)
+{
+    int gpio = 2;               // Default GPIO
+    int timer = 0;              // Default LEDC_TIMER_0
+    int channel = 0;            // Default LEDC_CHANNEL_0
+    uint32_t freq = 1000;       // Default Frequency (Hz)
+
+    if (config != nullptr) {
+        cJSON* gpio_item = cJSON_GetObjectItem(config, "gpio");
+        if (cJSON_IsNumber(gpio_item)) {
+            gpio = gpio_item->valueint;
+        }
+
+        cJSON* timer_item = cJSON_GetObjectItem(config, "timer");
+        if (cJSON_IsNumber(timer_item)) {
+            timer = timer_item->valueint;
+        }
+
+        cJSON* channel_item = cJSON_GetObjectItem(config, "channel");
+        if (cJSON_IsNumber(channel_item)) {
+            channel = channel_item->valueint;
+        }
+
+        cJSON* freq_item = cJSON_GetObjectItem(config, "freq");
+        if (cJSON_IsNumber(freq_item)) {
+            freq = static_cast<uint32_t>(freq_item->valueint);
+        }
+    }
+
+    return new PwmOutputBlock(block_id, gpio, static_cast<ledc_timer_t>(timer), static_cast<ledc_channel_t>(channel), freq);
+}
+
+/**
+ * @brief Static block registration.
+ * Executes prior to app_main to register the factory method into the BlockRegistry.
+ */
+static bool registered = []() {
+    BlockRegistry::registerBlock("PwmOutput", PwmOutputBlock::create);
+    return true;
+}();
 
 } // namespace Cefet

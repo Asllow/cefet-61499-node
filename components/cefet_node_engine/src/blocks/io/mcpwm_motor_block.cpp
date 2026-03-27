@@ -1,20 +1,22 @@
 #include "mcpwm_motor_block.h"
+#include "block_registry.h"
 #include "esp_log.h"
 #include <algorithm>
+#include <cmath>
 
 namespace Cefet {
 
 static const char* TAG = "MCPWM_MOTOR_BLOCK";
 
 /**
- * @brief Resolucao interna do temporizador MCPWM em Hertz.
- * Define a granularidade do calculo do Duty Cycle.
+ * @brief Internal MCPWM timer resolution in Hertz.
+ * Defines the granularity of the Duty Cycle calculation.
  */
 constexpr uint32_t MCPWM_TIMER_RESOLUTION_HZ = 10000000; 
 
 McpwmMotorBlock::McpwmMotorBlock(const std::string& block_id, int gpio_pwm_a, int gpio_pwm_b, uint32_t freq_hz)
     : m_id(block_id), m_gpio_a(gpio_pwm_a), m_gpio_b(gpio_pwm_b), m_freq_hz(freq_hz),
-    m_timer(nullptr), m_oper(nullptr), m_cmpr(nullptr), m_gen_a(nullptr), m_gen_b(nullptr)
+      m_timer(nullptr), m_oper(nullptr), m_cmpr(nullptr), m_gen_a(nullptr), m_gen_b(nullptr)
 {
     m_period_ticks = MCPWM_TIMER_RESOLUTION_HZ / m_freq_hz;
 }
@@ -70,7 +72,7 @@ bool McpwmMotorBlock::initialize()
     if (mcpwm_timer_enable(m_timer) != ESP_OK) return false;
     if (mcpwm_timer_start_stop(m_timer, MCPWM_TIMER_START_NO_STOP) != ESP_OK) return false;
 
-    ESP_LOGI(TAG, "[%s] Bloco Motor MCPWM inicializado (Pinos: %d, %d | Freq: %lu Hz).", m_id.c_str(), m_gpio_a, m_gpio_b, m_freq_hz);
+    ESP_LOGI(TAG, "[%s] MCPWM Motor Block initialized (Pins: %d, %d | Freq: %lu Hz).", m_id.c_str(), m_gpio_a, m_gpio_b, m_freq_hz);
     return true;
 }
 
@@ -103,5 +105,40 @@ bool McpwmMotorBlock::setSpeed(float speed_percent)
 
     return true;
 }
+
+IFunctionBlock* McpwmMotorBlock::create(const std::string& block_id, cJSON* config)
+{
+    int gpio_a = 15;            // Default GPIO IN1
+    int gpio_b = 16;            // Default GPIO IN2
+    uint32_t freq = 20000;      // Default Frequency (Hz)
+
+    if (config != nullptr) {
+        cJSON* gpio_a_item = cJSON_GetObjectItem(config, "gpio_a");
+        if (cJSON_IsNumber(gpio_a_item)) {
+            gpio_a = gpio_a_item->valueint;
+        }
+
+        cJSON* gpio_b_item = cJSON_GetObjectItem(config, "gpio_b");
+        if (cJSON_IsNumber(gpio_b_item)) {
+            gpio_b = gpio_b_item->valueint;
+        }
+
+        cJSON* freq_item = cJSON_GetObjectItem(config, "freq");
+        if (cJSON_IsNumber(freq_item)) {
+            freq = static_cast<uint32_t>(freq_item->valueint);
+        }
+    }
+
+    return new McpwmMotorBlock(block_id, gpio_a, gpio_b, freq);
+}
+
+/**
+ * @brief Static block registration.
+ * Executes prior to app_main to register the factory method into the BlockRegistry.
+ */
+static bool registered = []() {
+    BlockRegistry::registerBlock("McpwmMotor", McpwmMotorBlock::create);
+    return true;
+}();
 
 } // namespace Cefet

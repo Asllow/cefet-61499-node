@@ -1,4 +1,5 @@
 #include "udp_publisher_block.h"
+#include "block_registry.h"
 #include "esp_log.h"
 #include <cstring>
 
@@ -26,11 +27,11 @@ bool UdpPublisherBlock::initialize()
 {
     m_socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
     if (m_socket < 0) {
-        ESP_LOGE(TAG, "[%s] Falha ao criar socket UDP.", m_id.c_str());
+        ESP_LOGE(TAG, "[%s] Failed to create UDP socket.", m_id.c_str());
         return false;
     }
 
-    ESP_LOGI(TAG, "[%s] Bloco UDP inicializado. Alvo: %s:%d", m_id.c_str(), m_target_ip.c_str(), m_port);
+    ESP_LOGI(TAG, "[%s] UDP Block initialized. Target: %s:%d", m_id.c_str(), m_target_ip.c_str(), m_port);
     return true;
 }
 
@@ -47,11 +48,40 @@ bool UdpPublisherBlock::publish(const std::string& payload)
                      (struct sockaddr *)&m_dest_addr, sizeof(m_dest_addr));
 
     if (err < 0) {
-        ESP_LOGE(TAG, "[%s] Falha ao enviar datagrama UDP.", m_id.c_str());
+        ESP_LOGE(TAG, "[%s] Failed to send UDP datagram.", m_id.c_str());
         return false;
     }
     
     return true;
 }
+
+IFunctionBlock* UdpPublisherBlock::create(const std::string& block_id, cJSON* config)
+{
+    std::string ip = "255.255.255.255"; // Default: Broadcast
+    uint16_t port = 5000;               // Default port
+
+    if (config != nullptr) {
+        cJSON* ip_item = cJSON_GetObjectItem(config, "target_ip");
+        if (cJSON_IsString(ip_item) && (ip_item->valuestring != nullptr)) {
+            ip = ip_item->valuestring;
+        }
+
+        cJSON* port_item = cJSON_GetObjectItem(config, "target_port");
+        if (cJSON_IsNumber(port_item)) {
+            port = static_cast<uint16_t>(port_item->valueint);
+        }
+    }
+
+    return new UdpPublisherBlock(block_id, ip, port);
+}
+
+/**
+ * @brief Static block registration.
+ * Executes prior to app_main to register the factory method into the BlockRegistry.
+ */
+static bool registered = []() {
+    BlockRegistry::registerBlock("UdpPublisher", UdpPublisherBlock::create);
+    return true;
+}();
 
 } // namespace Cefet
