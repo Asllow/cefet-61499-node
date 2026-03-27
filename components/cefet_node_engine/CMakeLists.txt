@@ -1,0 +1,19 @@
+idf_component_register(
+    SRCS "src/core/cefet_node_engine.cpp"
+        "src/core/network/network_manager.cpp"
+        "src/core/management/block_registry.cpp"
+        "src/blocks/io/analog_input_block.cpp"
+        "src/blocks/io/pwm_output_block.cpp"
+        "src/blocks/io/mcpwm_motor_block.cpp"
+        "src/blocks/network/mqtt_publisher_block.cpp"
+        "src/blocks/network/udp_publisher_block.cpp"
+        "src/blocks/timers/e_cycle_block.cpp"
+    INCLUDE_DIRS "include"
+                "include/core"
+                "include/core/network"
+                "include/core/management"
+                "include/blocks/io"
+                "include/blocks/network"
+                "include/blocks/timers"
+    REQUIRES esp_event esp_adc esp_timer driver esp_wifi esp_netif nvs_flash esp_driver_ledc esp_driver_mcpwm mqtt lwip
+)
