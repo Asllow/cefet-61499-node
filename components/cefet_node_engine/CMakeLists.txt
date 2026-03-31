@@ -2,6 +2,8 @@ idf_component_register(
     SRCS "src/core/cefet_node_engine.cpp"
         "src/core/network/network_manager.cpp"
         "src/core/management/block_registry.cpp"
+        "src/core/management/json_parser.cpp"
+        "src/core/management/spiffs_manager.cpp"
         "src/blocks/io/analog_input_block.cpp"
         "src/blocks/io/pwm_output_block.cpp"
         "src/blocks/io/mcpwm_motor_block.cpp"
@@ -15,5 +17,5 @@ idf_component_register(
                 "include/blocks/io"
                 "include/blocks/network"
                 "include/blocks/timers"
-    REQUIRES esp_event esp_adc esp_timer driver esp_wifi esp_netif nvs_flash esp_driver_ledc esp_driver_mcpwm mqtt lwip cjson
+    REQUIRES esp_event esp_adc esp_timer driver esp_wifi esp_netif nvs_flash esp_driver_ledc esp_driver_mcpwm mqtt lwip cjson spiffs
 )
