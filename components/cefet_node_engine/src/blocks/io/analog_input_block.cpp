@@ -7,7 +7,7 @@ namespace Cefet {
 static const char* TAG = "ANALOG_INPUT_BLOCK";
 
 AnalogInputBlock::AnalogInputBlock(const std::string& block_id, adc_unit_t adc_unit, adc_channel_t adc_channel)
-    : m_id(block_id), m_unit(adc_unit), m_channel(adc_channel), m_adc_handle(nullptr), m_initialized(false)
+    : m_id(block_id), m_unit(adc_unit), m_channel(adc_channel), m_adc_handle(nullptr), m_initialized(false), m_data_out(0)
 {
 }
 
@@ -68,6 +68,28 @@ bool AnalogInputBlock::readRaw(int* out_value)
 
     return true;
 }
+
+// =========================================================================
+// IMPLEMENTACAO DAS PORTAS IEC 61499
+// =========================================================================
+
+void* AnalogInputBlock::getDataOutput(const std::string& port_name)
+{
+    if (port_name == "DATA_OUT") {
+        return &m_data_out; // Entrega o ponteiro da variavel
+    }
+    return nullptr;
+}
+
+void AnalogInputBlock::triggerEventInput(const std::string& event_name)
+{
+    if (event_name == "REQ") {
+        readRaw(&m_data_out); // Atualiza a variavel interna m_data_out
+        emitEvent("CNF");     // A MAGICA: Dispara o "fio vermelho" de confirmacao
+    }
+}
+
+// =========================================================================
 
 IFunctionBlock* AnalogInputBlock::create(const std::string& block_id, cJSON* config)
 {

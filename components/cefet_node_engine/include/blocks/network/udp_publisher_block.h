@@ -52,6 +52,20 @@ public:
      */
     bool publish(const std::string& payload);
 
+    // =========================================================================
+    // PORTAS IEC 61499
+    // =========================================================================
+
+    /**
+     * @brief Recebe o ponteiro de outro bloco para a porta "PAYLOAD_IN".
+     */
+    bool connectDataInput(const std::string& port_name, void* data_pointer) override;
+
+    /**
+     * @brief Executa o disparo da mensagem ao receber o evento "SEND".
+     */
+    void triggerEventInput(const std::string& event_name) override;
+
     /**
      * @brief Factory method for dynamic instantiation via JSON manifest.
      *
@@ -67,6 +81,9 @@ private:
     uint16_t m_port;
     int m_socket;
     struct sockaddr_in m_dest_addr;
+
+    /** @brief Fio de Cobre virtual: aponta para a memoria de saida de outro bloco */
+    int* m_payload_in; 
 };
 
 } // namespace Cefet

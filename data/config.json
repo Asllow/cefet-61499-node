@@ -6,14 +6,28 @@
             "config": { "unit": 1, "channel": 4 }
         },
         {
-            "id": "PUB_UDP",
-            "type": "UdpPublisher",
-            "config": { "target_ip": "192.168.137.1", "target_port": 5000 }
+            "id": "MODBUS_SERVER",
+            "type": "ModbusTcpServer",
+            "config": { "port": 502 }
+        },
+        {
+            "id": "CALCULO_ERRO",
+            "type": "MathNode",
+            "config": { "expression": "IN_A - IN_B" }
         },
         {
             "id": "CLOCK_MALHA",
             "type": "ECycle",
-            "config": { "period_ms": 100, "target_event": 1 }
+            "config": { "period_ms": 500 }
         }
+    ],
+    "connections": [
+        { "source": "MODBUS_SERVER.REG_OUT_0", "target": "CALCULO_ERRO.IN_A" },
+        { "source": "ADC_TACO.DATA_OUT", "target": "CALCULO_ERRO.IN_B" },
+        { "source": "CALCULO_ERRO.OUT", "target": "MODBUS_SERVER.REG_IN_0" },
+        
+        { "source": "CLOCK_MALHA.EV_OUT", "target": "ADC_TACO.REQ" },
+        { "source": "ADC_TACO.CNF", "target": "CALCULO_ERRO.REQ" },
+        { "source": "CALCULO_ERRO.CNF", "target": "MODBUS_SERVER.UPDATE" }
     ]
 }

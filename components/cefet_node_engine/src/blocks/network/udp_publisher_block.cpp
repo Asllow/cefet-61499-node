@@ -8,7 +8,7 @@ namespace Cefet {
 static const char* TAG = "UDP_PUB_BLOCK";
 
 UdpPublisherBlock::UdpPublisherBlock(const std::string& block_id, const std::string& target_ip, uint16_t target_port)
-    : m_id(block_id), m_target_ip(target_ip), m_port(target_port), m_socket(-1)
+    : m_id(block_id), m_target_ip(target_ip), m_port(target_port), m_socket(-1), m_payload_in(nullptr)
 {
     memset(&m_dest_addr, 0, sizeof(m_dest_addr));
     m_dest_addr.sin_family = AF_INET;
@@ -54,6 +54,34 @@ bool UdpPublisherBlock::publish(const std::string& payload)
     
     return true;
 }
+
+// =========================================================================
+// IMPLEMENTACAO DAS PORTAS IEC 61499
+// =========================================================================
+
+bool UdpPublisherBlock::connectDataInput(const std::string& port_name, void* data_pointer)
+{
+    if (port_name == "PAYLOAD_IN") {
+        // Recebe a "ponta do fio" do bloco anterior e pluga na nossa variavel
+        m_payload_in = static_cast<int*>(data_pointer);
+        return true;
+    }
+    return false;
+}
+
+void UdpPublisherBlock::triggerEventInput(const std::string& event_name)
+{
+    if (event_name == "SEND") {
+        if (m_payload_in != nullptr) {
+            // Acessa o espaco de memoria alheio, converte e dispara para a rede
+            publish(std::to_string(*m_payload_in));
+        } else {
+            ESP_LOGE(TAG, "[%s] Tentativa de SEND, mas a porta PAYLOAD_IN esta desconectada!", m_id.c_str());
+        }
+    }
+}
+
+// =========================================================================
 
 IFunctionBlock* UdpPublisherBlock::create(const std::string& block_id, cJSON* config)
 {

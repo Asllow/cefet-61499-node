@@ -61,7 +61,8 @@ void ECycleBlock::stopTimer()
 void ECycleBlock::timerCallback(void* arg)
 {
     ECycleBlock* instance = static_cast<ECycleBlock*>(arg);
-    CefetEngine::postEvent(instance->m_target_event);
+    // Em vez de gritar no barramento global, aciona a sua propria porta de saida "EV_OUT"
+    instance->emitEvent("EV_OUT");
 }
 
 IFunctionBlock* ECycleBlock::create(const std::string& block_id, cJSON* config)

@@ -3,6 +3,7 @@
 #include "esp_err.h"
 #include "cefet_events.h"
 #include <cstdarg>
+#include <string>
 
 namespace Cefet {
 
@@ -17,6 +18,14 @@ public:
      * @return esp_err_t ESP_OK se o motor iniciou com sucesso.
      */
     static esp_err_t start();
+
+    /**
+     * @brief Orquestra a inicializacao completa do no de borda.
+     * Monta o sistema de arquivos, converte o JSON, aloca os blocos e executa o roteamento (wiring).
+     * * @param manifest_path Caminho absoluto do arquivo de configuracao na flash (ex: "/spiffs/config.json").
+     * @return esp_err_t ESP_OK se a malha foi montada e roteada com sucesso.
+     */
+    static esp_err_t startFromManifest(const std::string& manifest_path);
 
     /**
      * @brief Publica um evento no barramento interno.

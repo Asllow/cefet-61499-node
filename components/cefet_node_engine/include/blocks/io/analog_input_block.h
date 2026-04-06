@@ -52,6 +52,20 @@ public:
      */
     bool readRaw(int* out_value);
 
+    // =========================================================================
+    // PORTAS IEC 61499
+    // =========================================================================
+
+    /**
+     * @brief Expoe o endereco de memoria da variavel de leitura do ADC.
+     */
+    void* getDataOutput(const std::string& port_name) override;
+
+    /**
+     * @brief Recebe um evento de disparo. Ex: "REQ" para requisitar uma nova leitura.
+     */
+    void triggerEventInput(const std::string& event_name) override;
+
     /**
      * @brief Factory method for dynamic instantiation via JSON manifest.
      *
@@ -67,6 +81,9 @@ private:
     adc_channel_t m_channel;
     adc_oneshot_unit_handle_t m_adc_handle;
     bool m_initialized;
+
+    /** @brief Variavel interna que representa o pino de saida "DATA_OUT" */
+    int m_data_out; 
 };
 
 } // namespace Cefet

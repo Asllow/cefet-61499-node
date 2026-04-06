@@ -2,6 +2,12 @@
 #include "esp_log.h"
 #include "sdkconfig.h"
 
+// Inclusões transferidas da main.cpp para o encapsulamento:
+#include "spiffs_manager.h"
+#include "json_parser.h"
+#include "connection_manager.h"
+#include "e_cycle_block.h"
+
 namespace Cefet {
 
 ESP_EVENT_DEFINE_BASE(CEFET_CORE_EVENTS);
@@ -26,6 +32,40 @@ esp_err_t CefetEngine::start() {
     postEvent(EV_SYSTEM_BOOT);
 
     ESP_LOGI(TAG, "Motor inicializado e aguardando manifestos (JSON).");
+    return ESP_OK;
+}
+
+esp_err_t CefetEngine::startFromManifest(const std::string& manifest_path) {
+    if (SpiffsManager::mount() != ESP_OK) {
+        ESP_LOGE(TAG, "Parando execucao. Sistema de arquivos inoperante.");
+        return ESP_FAIL;
+    }
+
+    std::string manifest = SpiffsManager::readFile(manifest_path);
+    if (manifest.empty()) {
+        ESP_LOGE(TAG, "Manifesto vazio ou nao encontrado: %s", manifest_path.c_str());
+        return ESP_FAIL;
+    }
+
+    ESP_LOGI(TAG, "Processando Manifesto JSON...");
+    auto blocks = JsonParser::parseManifest(manifest);
+
+    if (ConnectionManager::wireConnections(manifest, blocks)) {
+        ESP_LOGI(TAG, "Cabeamento da malha (Wiring) concluido com sucesso!");
+    } else {
+        ESP_LOGE(TAG, "Falha ao rotear a malha.");
+        return ESP_FAIL;
+    }
+
+    // Busca o bloco de Clock para dar o Play inicial da malha
+    for (auto* block : blocks) {
+        if (block->getId() == "CLOCK_MALHA") {
+            auto* clock = static_cast<ECycleBlock*>(block);
+            clock->startTimer();
+            break;
+        }
+    }
+
     return ESP_OK;
 }
 

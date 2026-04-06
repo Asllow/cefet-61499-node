@@ -4,12 +4,16 @@ idf_component_register(
         "src/core/management/block_registry.cpp"
         "src/core/management/json_parser.cpp"
         "src/core/management/spiffs_manager.cpp"
+        "src/core/management/connection_manager.cpp" 
         "src/blocks/io/analog_input_block.cpp"
         "src/blocks/io/pwm_output_block.cpp"
         "src/blocks/io/mcpwm_motor_block.cpp"
         "src/blocks/network/mqtt_publisher_block.cpp"
         "src/blocks/network/udp_publisher_block.cpp"
+        "src/blocks/network/modbus_tcp_server_block.cpp"
         "src/blocks/timers/e_cycle_block.cpp"
+        "src/blocks/math/tinyexpr.c"
+        "src/blocks/math/math_node_block.cpp"
     INCLUDE_DIRS "include"
                 "include/core"
                 "include/core/network"
@@ -17,5 +21,7 @@ idf_component_register(
                 "include/blocks/io"
                 "include/blocks/network"
                 "include/blocks/timers"
+                "include/blocks/math"
     REQUIRES esp_event esp_adc esp_timer driver esp_wifi esp_netif nvs_flash esp_driver_ledc esp_driver_mcpwm mqtt lwip cjson spiffs
+    WHOLE_ARCHIVE
 )
