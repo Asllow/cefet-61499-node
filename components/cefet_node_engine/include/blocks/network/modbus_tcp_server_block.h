@@ -1,6 +1,6 @@
 /**
  * @file modbus_tcp_server_block.h
- * @brief Servidor Modbus TCP Dinâmico e Genérico.
+ * @brief Servidor Modbus TCP Dinamico e Generico.
  */
 #pragma once
 
@@ -16,9 +16,10 @@ namespace Cefet {
 /**
  * @brief Modbus TCP Server Service Interface Function Block (CSIFB).
  *
- * Implementação dinâmica sobre sockets BSD. Suporta quantidade configurável
- * de Holding Registers. Realiza conversão automática de float (IEEE 754) 
- * para inteiros de 16-bits com Complemento de 2, permitindo tráfego de números negativos.
+ * Implementacao dinamicamente escalavel sobre sockets BSD. 
+ * Suporta quantidade configuravel de Holding Registers no JSON.
+ * Realiza conversao automatica de float (IEEE 754) para inteiros de 16-bits 
+ * utilizando Complemento de 2, permitindo trafego SCADA de numeros negativos.
  */
 class ModbusTcpServerBlock : public IFunctionBlock {
 public:
@@ -43,12 +44,12 @@ private:
     int m_listen_sock;
     TaskHandle_t m_server_task;
     
-    // Arrays dinâmicos alocados no construtor
+    /* Arrays dinamicos alocados no construtor. Substituem o codigo engessado. */
     std::vector<uint16_t> m_holding_registers;
-    std::vector<float*> m_regs_in;  // Ponteiros para dados externos (Sensores/Math)
-    std::vector<float> m_regs_out;  // Dados recebidos da rede e expostos para atuadores
+    std::vector<float*> m_regs_in; 
+    std::vector<float> m_regs_out;
 
     static void serverTask(void* arg);
 };
 
-} // namespace Cefet
+} /* namespace Cefet */

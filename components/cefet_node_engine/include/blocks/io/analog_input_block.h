@@ -1,3 +1,7 @@
+/**
+ * @file analog_input_block.h
+ * @brief Servico de Entrada Analogica (CSIFB) com tipagem padronizada.
+ */
 #pragma once
 
 #include <string>
@@ -11,67 +15,63 @@ namespace Cefet {
 /**
  * @brief Analog Input Service Interface Function Block (SIFB).
  *
- * Encapsulates the ESP-IDF v6.0 oneshot ADC driver. 
- * Provides continuous or single-shot analog readings for control loops.
+ * Encapsula o driver ADC do ESP-IDF v6.0.
+ * Converte o valor bruto lido para float, garantindo o polimorfismo
+ * e a integridade dos ponteiros na troca de dados com outros blocos 
+ * matematicos e de rede.
  */
 class AnalogInputBlock : public IFunctionBlock {
 public:
     /**
-     * @brief Instantiates the Analog Input Block.
+     * @brief Instancia o Bloco de Entrada Analogica.
      *
-     * @param block_id Unique network identifier for the block instance.
-     * @param adc_unit Hardware ADC unit (e.g., ADC_UNIT_1).
-     * @param adc_channel Hardware ADC channel corresponding to the physical GPIO.
+     * @param block_id Identificador unico na rede.
+     * @param adc_unit Unidade de hardware ADC.
+     * @param adc_channel Canal ADC correspondente ao GPIO fisico.
      */
     AnalogInputBlock(const std::string& block_id, adc_unit_t adc_unit, adc_channel_t adc_channel);
 
     /**
-     * @brief Destroys the Analog Input Block and frees hardware resources.
+     * @brief Destrutor. Liberta os recursos de hardware do ADC.
      */
     ~AnalogInputBlock() override;
 
     /**
-     * @brief Initializes the ADC hardware peripheral.
+     * @brief Inicializa e calibra o periferico no ESP32.
      *
-     * @return true if hardware allocation and calibration succeed, false otherwise.
+     * @return true se a alocacao for bem-sucedida.
      */
     bool initialize() override;
 
     /**
-     * @brief Retrieves the block's unique identifier.
+     * @brief Recupera a identificacao do bloco.
      *
-     * @return std::string The configured block ID.
+     * @return std::string O ID configurado.
      */
     std::string getId() const override;
 
     /**
-     * @brief Performs a raw analog-to-digital conversion.
+     * @brief Realiza a conversao analogico-digital bruta.
      *
-     * @param out_value Pointer to store the conversion result.
-     * @return true if conversion is successful, false if hardware error occurs.
+     * @param out_value Ponteiro para armazenar o resultado inteiro do hardware.
+     * @return true se a leitura for bem-sucedida.
      */
     bool readRaw(int* out_value);
 
-    // =========================================================================
-    // PORTAS IEC 61499
-    // =========================================================================
+    /* PORTAS IEC 61499 */
 
     /**
-     * @brief Expoe o endereco de memoria da variavel de leitura do ADC.
+     * @brief Expoe o endereco de memoria da variavel tipada em float.
      */
     void* getDataOutput(const std::string& port_name) override;
 
     /**
-     * @brief Recebe um evento de disparo. Ex: "REQ" para requisitar uma nova leitura.
+     * @brief Processa eventos de entrada (Ex: REQ).
      */
     void triggerEventInput(const std::string& event_name) override;
 
     /**
-     * @brief Factory method for dynamic instantiation via JSON manifest.
-     *
-     * @param block_id Unique identifier for the new instance.
-     * @param config cJSON pointer containing block-specific parameters.
-     * @return IFunctionBlock* Pointer to the newly allocated instance.
+     * @brief Factory method para instanciacao via JSON.
      */
     static IFunctionBlock* create(const std::string& block_id, cJSON* config);
 
@@ -82,8 +82,11 @@ private:
     adc_oneshot_unit_handle_t m_adc_handle;
     bool m_initialized;
 
-    /** @brief Variavel interna que representa o pino de saida "DATA_OUT" */
-    int m_data_out; 
+    /** * @brief Variavel interna tipada em float para seguranca de ponteiros.
+     * Substitui o int original que causava corrupcao de memoria ao ser 
+     * lido por blocos matematicos.
+     */
+    float m_data_out; 
 };
 
-} // namespace Cefet
+} /* namespace Cefet */

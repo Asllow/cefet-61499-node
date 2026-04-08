@@ -1,3 +1,7 @@
+/**
+ * @file math_node_block.h
+ * @brief Cabecalho do Bloco Matematico Generico.
+ */
 #pragma once
 
 #include <string>
@@ -8,10 +12,9 @@
 namespace Cefet {
 
 /**
- * @brief Bloco Matemático Genérico (MathNodeBlock).
- * * Capaz de processar equações matemáticas em tempo real utilizando a TinyExpr.
- * Ideal para construir controladores P, PI, PD e PID de forma frugível,
- * alterando apenas a "expression" no ficheiro JSON.
+ * @brief Bloco Matematico Generico (MathNodeBlock).
+ * * Capaz de processar equacoes matematicas em tempo real utilizando a TinyExpr.
+ * Opera exclusivamente com ponteiros float garantindo o desacoplamento.
  */
 class MathNodeBlock : public IFunctionBlock {
 public:
@@ -32,17 +35,17 @@ private:
     std::string m_expression;
     te_expr* m_compiled_expr;
 
-    // Entradas (Ponteiros para os blocos a montante)
+    /* Entradas tipadas para manter a coesao de memoria */
     float* m_in_a;
     float* m_in_b;
     float* m_in_c;
     float* m_in_d;
 
-    // Variáveis internas para a TinyExpr (exige o formato double)
+    /* Variaveis internas exigidas pelo parser C */
     double m_val_a, m_val_b, m_val_c, m_val_d;
 
-    // Saída calculada
+    /* Variavel de saida encapsulada */
     float m_out;
 };
 
-} // namespace Cefet
+} /* namespace Cefet */

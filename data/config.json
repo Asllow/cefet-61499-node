@@ -6,14 +6,18 @@
             "config": { "unit": 1, "channel": 4 }
         },
         {
-            "id": "MODBUS_SERVER",
-            "type": "ModbusTcpServer",
-            "config": { "port": 502 }
+            "id": "CONTROLADOR_LUA",
+            "type": "Sandbox",
+            "config": { 
+                "script_b64": "ZnVuY3Rpb24gdGljayhpbl8wKQogICAgbG9jYWwgc2V0cG9pbnQgPSA1MC4wCiAgICBsb2NhbCBlcnJvID0gc2V0cG9pbnQgLSBpbl8wCiAgICBsb2NhbCBrcCA9IDIuNQogICAgaWYgZXJybyA+IC0xMCBhbmQgZXJybyA8IDEwIHRoZW4gZXJybyA9IDAgZW5kCiAgICBsb2NhbCB1ID0gZXJybyAqIGtwCiAgICBpZiB1ID4gMTAwMCB0aGVuIHUgPSAxMDAwIGVsc2VpZiB1IDwgLTEwMDAgdGhlbiB1ID0gLTEwMDAgZW5kCiAgICByZXR1cm4gZXJybywgdQplbmQ=",
+                "num_in": 1,
+                "num_out": 2
+            }
         },
         {
-            "id": "CALCULO_ERRO",
-            "type": "MathNode",
-            "config": { "expression": "IN_A - IN_B" }
+            "id": "MONITOR",
+            "type": "SerialMonitor",
+            "config": { "num_in": 3 }
         },
         {
             "id": "CLOCK_MALHA",
@@ -22,12 +26,14 @@
         }
     ],
     "connections": [
-        { "source": "MODBUS_SERVER.REG_OUT_0", "target": "CALCULO_ERRO.IN_A" },
-        { "source": "ADC_TACO.DATA_OUT", "target": "CALCULO_ERRO.IN_B" },
-        { "source": "CALCULO_ERRO.OUT", "target": "MODBUS_SERVER.REG_IN_0" },
+        { "source": "ADC_TACO.DATA_OUT", "target": "CONTROLADOR_LUA.IN_0" },
+        
+        { "source": "ADC_TACO.DATA_OUT", "target": "MONITOR.IN_0" },
+        { "source": "CONTROLADOR_LUA.OUT_0", "target": "MONITOR.IN_1" },
+        { "source": "CONTROLADOR_LUA.OUT_1", "target": "MONITOR.IN_2" },
         
         { "source": "CLOCK_MALHA.EV_OUT", "target": "ADC_TACO.REQ" },
-        { "source": "ADC_TACO.CNF", "target": "CALCULO_ERRO.REQ" },
-        { "source": "CALCULO_ERRO.CNF", "target": "MODBUS_SERVER.UPDATE" }
+        { "source": "ADC_TACO.CNF", "target": "CONTROLADOR_LUA.REQ" },
+        { "source": "CONTROLADOR_LUA.CNF", "target": "MONITOR.REQ" }
     ]
 }

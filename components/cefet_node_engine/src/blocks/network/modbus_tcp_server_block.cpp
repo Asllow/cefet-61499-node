@@ -1,6 +1,6 @@
 /**
  * @file modbus_tcp_server_block.cpp
- * @brief Implementação de Servidor Modbus TCP Dinâmico com suporte a Complemento de 2.
+ * @brief Implementacao do Servidor Modbus TCP Dinamico.
  */
 #include "modbus_tcp_server_block.h"
 #include "block_registry.h"
@@ -16,7 +16,7 @@ static const char* TAG = "MODBUS_GENERICO";
 ModbusTcpServerBlock::ModbusTcpServerBlock(const std::string& block_id, uint16_t port, uint16_t num_in, uint16_t num_out)
     : m_id(block_id), m_port(port), m_num_in(num_in), m_num_out(num_out), m_listen_sock(-1), m_server_task(nullptr)
 {
-    // Alocação dinâmica da tabela Modbus: [0...num_in-1] = Entradas | [num_in...num_in+num_out-1] = Saídas
+    /* Alocacao da tabela unificada: [0 ... num_in-1] = Entradas | [num_in ... fim] = Saidas */
     m_holding_registers.resize(m_num_in + m_num_out, 0);
     m_regs_in.resize(m_num_in, nullptr);
     m_regs_out.resize(m_num_out, 0.0f);
@@ -24,14 +24,20 @@ ModbusTcpServerBlock::ModbusTcpServerBlock(const std::string& block_id, uint16_t
 
 ModbusTcpServerBlock::~ModbusTcpServerBlock()
 {
-    if (m_server_task != nullptr) vTaskDelete(m_server_task);
-    if (m_listen_sock != -1) close(m_listen_sock);
+    if (m_server_task != nullptr) {
+        vTaskDelete(m_server_task);
+    }
+    if (m_listen_sock != -1) {
+        close(m_listen_sock);
+    }
 }
 
 bool ModbusTcpServerBlock::initialize()
 {
     m_listen_sock = socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
-    if (m_listen_sock < 0) return false;
+    if (m_listen_sock < 0) {
+        return false;
+    }
 
     int opt = 1;
     setsockopt(m_listen_sock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
@@ -46,7 +52,9 @@ bool ModbusTcpServerBlock::initialize()
         return false;
     }
 
-    if (listen(m_listen_sock, 1) != 0) return false;
+    if (listen(m_listen_sock, 1) != 0) {
+        return false;
+    }
 
     if (xTaskCreate(&ModbusTcpServerBlock::serverTask, m_id.c_str(), 4096, this, 5, &m_server_task) != pdPASS) {
         return false;
@@ -57,11 +65,14 @@ bool ModbusTcpServerBlock::initialize()
     return true;
 }
 
-std::string ModbusTcpServerBlock::getId() const { return m_id; }
+std::string ModbusTcpServerBlock::getId() const 
+{ 
+    return m_id; 
+}
 
 void* ModbusTcpServerBlock::getDataOutput(const std::string& port_name)
 {
-    // Parseamento dinâmico do nome da porta (ex: "REG_OUT_3")
+    /* Busca dinamica pelo nome gerado no JSON */
     if (port_name.find("REG_OUT_") == 0) {
         int idx = std::stoi(port_name.substr(8));
         if (idx >= 0 && idx < m_num_out) {
@@ -73,7 +84,7 @@ void* ModbusTcpServerBlock::getDataOutput(const std::string& port_name)
 
 bool ModbusTcpServerBlock::connectDataInput(const std::string& port_name, void* data_pointer)
 {
-    // Parseamento dinâmico do nome da porta (ex: "REG_IN_2")
+    /* Varredura dinamica das portas de entrada */
     if (port_name.find("REG_IN_") == 0) {
         int idx = std::stoi(port_name.substr(7));
         if (idx >= 0 && idx < m_num_in) {
@@ -87,7 +98,7 @@ bool ModbusTcpServerBlock::connectDataInput(const std::string& port_name, void* 
 void ModbusTcpServerBlock::triggerEventInput(const std::string& event_name)
 {
     if (event_name == "UPDATE") {
-        // 1. FLOAT -> INT16_T -> UINT16_T (Complemento de 2 nativo do C++)
+        /* Transformacao de float para int16_t mantendo o Complemento de 2 binario */
         for (uint16_t i = 0; i < m_num_in; i++) {
             if (m_regs_in[i] != nullptr) {
                 float raw_val = *(m_regs_in[i]);
@@ -96,7 +107,7 @@ void ModbusTcpServerBlock::triggerEventInput(const std::string& event_name)
             }
         }
         
-        // 2. UINT16_T -> INT16_T -> FLOAT (Lendo comandos do Mestre)
+        /* Reconstrucao dos comandos recebidos da rede para o motor C++ */
         for (uint16_t i = 0; i < m_num_out; i++) {
             uint16_t raw_reg = m_holding_registers[m_num_in + i];
             int16_t signed_reg = static_cast<int16_t>(raw_reg);
@@ -117,13 +128,17 @@ void ModbusTcpServerBlock::serverTask(void* arg)
         socklen_t addr_len = sizeof(source_addr);
         int sock = accept(instance->m_listen_sock, (struct sockaddr *)&source_addr, &addr_len);
         
-        if (sock < 0) continue;
+        if (sock < 0) {
+            continue;
+        }
         ESP_LOGI(TAG, "Mestre Modbus Conectado.");
 
         while (1) {
             uint8_t rx[256];
             int len = recv(sock, rx, sizeof(rx), 0);
-            if (len <= 0) break;
+            if (len <= 0) {
+                break;
+            }
 
             if (len >= 12 && rx[2] == 0 && rx[3] == 0) {
                 uint8_t func = rx[7];
@@ -134,8 +149,10 @@ void ModbusTcpServerBlock::serverTask(void* arg)
                     uint8_t tx[256];
                     memcpy(tx, rx, 7);
                     uint16_t out_len = 3 + (quant * 2);
-                    tx[4] = out_len >> 8; tx[5] = out_len & 0xFF;
-                    tx[7] = 3; tx[8] = quant * 2;
+                    tx[4] = out_len >> 8; 
+                    tx[5] = out_len & 0xFF;
+                    tx[7] = 3; 
+                    tx[8] = quant * 2;
                     
                     for (int i = 0; i < quant; i++) {
                         uint16_t val = instance->m_holding_registers[start_addr + i];
@@ -150,7 +167,8 @@ void ModbusTcpServerBlock::serverTask(void* arg)
                     }
                     uint8_t tx[12];
                     memcpy(tx, rx, 12);
-                    tx[4] = 0; tx[5] = 6;
+                    tx[4] = 0; 
+                    tx[5] = 6;
                     send(sock, tx, 12, 0);
                 }
             }
@@ -163,18 +181,24 @@ void ModbusTcpServerBlock::serverTask(void* arg)
 IFunctionBlock* ModbusTcpServerBlock::create(const std::string& block_id, cJSON* config) 
 {
     uint16_t port = 502; 
-    uint16_t in_regs = 4;   // Default 4
-    uint16_t out_regs = 4;  // Default 4
+    uint16_t in_regs = 4;
+    uint16_t out_regs = 4;
 
     if (config != nullptr) {
         cJSON* p = cJSON_GetObjectItem(config, "port");
-        if (cJSON_IsNumber(p)) port = static_cast<uint16_t>(p->valueint);
+        if (cJSON_IsNumber(p)) {
+            port = static_cast<uint16_t>(p->valueint);
+        }
 
         cJSON* in = cJSON_GetObjectItem(config, "regs_in");
-        if (cJSON_IsNumber(in)) in_regs = static_cast<uint16_t>(in->valueint);
+        if (cJSON_IsNumber(in)) {
+            in_regs = static_cast<uint16_t>(in->valueint);
+        }
 
         cJSON* out = cJSON_GetObjectItem(config, "regs_out");
-        if (cJSON_IsNumber(out)) out_regs = static_cast<uint16_t>(out->valueint);
+        if (cJSON_IsNumber(out)) {
+            out_regs = static_cast<uint16_t>(out->valueint);
+        }
     }
     
     return new ModbusTcpServerBlock(block_id, port, in_regs, out_regs);
@@ -185,4 +209,4 @@ static bool registered = []() {
     return true;
 }();
 
-} // namespace Cefet
+} /* namespace Cefet */
