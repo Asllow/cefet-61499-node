@@ -1,39 +1,22 @@
 {
-    "blocks": [
-        {
-            "id": "ADC_TACO",
-            "type": "AnalogInput",
-            "config": { "unit": 1, "channel": 4 }
-        },
-        {
-            "id": "CONTROLADOR_LUA",
-            "type": "Sandbox",
-            "config": { 
-                "script_b64": "ZnVuY3Rpb24gdGljayhpbl8wKQogICAgbG9jYWwgc2V0cG9pbnQgPSA1MC4wCiAgICBsb2NhbCBlcnJvID0gc2V0cG9pbnQgLSBpbl8wCiAgICBsb2NhbCBrcCA9IDIuNQogICAgaWYgZXJybyA+IC0xMCBhbmQgZXJybyA8IDEwIHRoZW4gZXJybyA9IDAgZW5kCiAgICBsb2NhbCB1ID0gZXJybyAqIGtwCiAgICBpZiB1ID4gMTAwMCB0aGVuIHUgPSAxMDAwIGVsc2VpZiB1IDwgLTEwMDAgdGhlbiB1ID0gLTEwMDAgZW5kCiAgICByZXR1cm4gZXJybywgdQplbmQ=",
-                "num_in": 1,
-                "num_out": 2
-            }
-        },
-        {
-            "id": "MONITOR",
-            "type": "SerialMonitor",
-            "config": { "num_in": 3 }
-        },
-        {
-            "id": "CLOCK_MALHA",
-            "type": "ECycle",
-            "config": { "period_ms": 500 }
-        }
-    ],
-    "connections": [
-        { "source": "ADC_TACO.DATA_OUT", "target": "CONTROLADOR_LUA.IN_0" },
-        
-        { "source": "ADC_TACO.DATA_OUT", "target": "MONITOR.IN_0" },
-        { "source": "CONTROLADOR_LUA.OUT_0", "target": "MONITOR.IN_1" },
-        { "source": "CONTROLADOR_LUA.OUT_1", "target": "MONITOR.IN_2" },
-        
-        { "source": "CLOCK_MALHA.EV_OUT", "target": "ADC_TACO.REQ" },
-        { "source": "ADC_TACO.CNF", "target": "CONTROLADOR_LUA.REQ" },
-        { "source": "CONTROLADOR_LUA.CNF", "target": "MONITOR.REQ" }
-    ]
+  "device": "ESP32-A-Cerebro",
+  "blocks": [
+    { "id": "CLOCK", "type": "ECycle", "config": { "period_ms": 54 } },
+    { "id": "SENSOR_EC11", "type": "EncoderInput", "config": { "gpio_a": 16, "gpio_b": 17, "ppr": 10000, "high_limit": 10000, "low_limit": -10000 } },
+    { "id": "PID_LUA", "type": "Sandbox", "config": { "num_in": 1, "num_out": 1, "script_b64": "aWYgaW5pdCA9PSBuaWwgdGhlbgogIGluaXQgPSB0cnVlCiAgZWEgPSAwLjAKICB1aWEgPSAwLjAKICByZWYgPSAwLjk2CiAgdTAgPSA0LjgKICBrcCA9IDIuMDg1OAogIGtpID0gNC41MDA1CiAga2QgPSAwLjEwMzgKICBUcyA9IDAuMDU0CmVuZApsb2NhbCBhbmdsZSA9IElOXzAgb3IgMC4wCmxvY2FsIGUgPSByZWYgLSBhbmdsZQpsb2NhbCBkdWlhID0ga2kgKiBUcyAqIGUKbG9jYWwgdWQgPSAoZSAtIGVhKSAqIChrZCAvIFRzKQpsb2NhbCB1ID0gKGtwICogZSkgKyB1ZCArIHVpYSArIHUwCmVhID0gZQppZiB1ID4gMTIuMCB0aGVuCiAgdSA9IDEyLjAKZWxzZWlmIHUgPCAwLjAgdGhlbgogIHUgPSAwLjAKZWxzZQogIHVpYSA9IHVpYSArIGR1aWEKZW5kCk9VVF8wID0gdQ==" } },
+    { "id": "REDE_OUT", "type": "UdpPublisher", "config": { "target_ip": "192.168.137.26", "port": 5000 } },
+    { "id": "MONITOR", "type": "SerialMonitor", "config": { "num_in": 2 } }
+  ],
+  "connections": [
+    { "source": "CLOCK.EV_OUT", "target": "SENSOR_EC11.REQ" },
+    { "source": "SENSOR_EC11.CNF", "target": "PID_LUA.REQ" },
+    { "source": "PID_LUA.CNF", "target": "REDE_OUT.REQ" },
+    { "source": "PID_LUA.CNF", "target": "MONITOR.REQ" },
+
+    { "source": "SENSOR_EC11.ANGLE", "target": "PID_LUA.IN_0" },
+    { "source": "PID_LUA.OUT_0", "target": "REDE_OUT.DATA_IN" },
+    
+    { "source": "SENSOR_EC11.ANGLE", "target": "MONITOR.IN_0" },
+    { "source": "PID_LUA.OUT_0", "target": "MONITOR.IN_1" }
+  ]
 }

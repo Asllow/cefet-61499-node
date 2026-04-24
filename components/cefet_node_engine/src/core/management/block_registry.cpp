@@ -25,7 +25,6 @@ IFunctionBlock* BlockRegistry::createBlock(const std::string& block_type, const 
     auto it = registry.find(block_type);
     
     if (it != registry.end()) {
-        // Chama a funcao fabrica associada ao tipo
         return it->second(block_id, config);
     }
     
