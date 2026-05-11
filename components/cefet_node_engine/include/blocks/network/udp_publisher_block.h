@@ -83,7 +83,7 @@ private:
     struct sockaddr_in m_dest_addr;
 
     /** @brief Fio de Cobre virtual: aponta para a memoria de saida de outro bloco */
-    int* m_payload_in; 
+    float* m_payload_in; 
 };
 
 } // namespace Cefet

@@ -63,7 +63,7 @@ bool UdpPublisherBlock::connectDataInput(const std::string& port_name, void* dat
 {
     if (port_name == "PAYLOAD_IN") {
         // Recebe a "ponta do fio" do bloco anterior e pluga na nossa variavel
-        m_payload_in = static_cast<int*>(data_pointer);
+        m_payload_in = static_cast<float*>(data_pointer);
         return true;
     }
     return false;

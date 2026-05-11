@@ -34,6 +34,7 @@ bool ECycleBlock::initialize()
     }
 
     ESP_LOGI(TAG, "[%s] Timer initialized (Period: %llu ms).", m_id.c_str(), m_period_ms);
+    startTimer();
     return true;
 }
 
